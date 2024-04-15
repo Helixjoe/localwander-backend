@@ -1,10 +1,21 @@
 const Trip = require('../models/Trip');
 
-// Get all trips for a specific user
-exports.getTrips = async (req, res) => {
-    const userId = req.params.userId;
+
+// Get all trips for the current authenticated user
+exports.getTripsByUser = async (req, res) => {
+    // Check if the user is authenticated
+    if (!req.user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     try {
+        // Extract userId from the authenticated user object (assuming userId is stored as _id)
+        const userId = req.user._id; // Assuming userId is stored as _id
+
+        // Find all trips associated with the userId
         const trips = await Trip.find({ userId });
+
+        // Respond with the found trips
         res.json(trips);
     } catch (error) {
         console.error('Error fetching trips:', error);
@@ -14,10 +25,19 @@ exports.getTrips = async (req, res) => {
 
 // Create a new trip
 exports.createTrip = async (req, res) => {
-    const { userId, title, location, startDate, endDate } = req.body;
+    const { title, location, startDate, endDate } = req.body;
+
+    // Extract userId from the authenticated user object (assuming userId is a field in req.user)
+    const userId = req.user._id; // Adjust this based on your actual user schema
+
     try {
+        // Create a new trip with the extracted userId
         const newTrip = new Trip({ userId, title, location, startDate, endDate });
+
+        // Save the new trip to the database
         await newTrip.save();
+
+        // Respond with success message and created trip data
         res.json({ message: 'Trip created successfully', trip: newTrip });
     } catch (error) {
         console.error('Error creating trip:', error);
