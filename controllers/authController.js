@@ -23,23 +23,23 @@ exports.registerUser = async (req, res) => {
 
 
 // Login user using passport-local strategy
-exports.loginUser = async (req, res, next) => {
-    passport.authenticate('local', (err, user) => {
-        if (err) {
-            console.error('Authentication error:', err);
-            return res.status(500).json({ error: 'Authentication failed' });
-        }
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid username or password' });
-        }
-        req.login(user, (err) => {
-            if (err) {
-                console.error('Login error:', err);
-                return res.status(500).json({ error: 'Login failed' });
-            }
-            return res.json({ message: 'Login successful', user });
-        });
-    })(req, res, next);
+
+
+exports.loginUser = (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        return next(err);
+      }
+      return res.json({ message: 'Login successful' });
+    });
+  })(req, res, next);
 };
 
 // Logout user

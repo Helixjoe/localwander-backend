@@ -14,15 +14,27 @@ const db = require('./config/database');
 app.use(session({
     secret: 'mysecret',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      httpOnly: true, // Prevent client-side access
+      secure: process.env.NODE_ENV === 'production', // Set to true for HTTPS (production)
+      sameSite: 'strict', // Strict mode for better security
+    },
 }));
+
 require('./config/passport'); // Import Passport configuration
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Middleware
 app.use(express.json());
+const cors = require('cors');
 
+app.use(cors({
+  origin: 'http://localhost:5173', // Allow requests from this origin
+  credentials: true, // Allow sending cookies with the request
+}));
 // Routes
 app.use('/auth', authRoutes); // Authentication routes
 
