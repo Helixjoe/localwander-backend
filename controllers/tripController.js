@@ -1,5 +1,5 @@
 const Trip = require("../models/Trip");
-
+const User = require("../models/User");
 // Helper function to calculate duration
 const calculateDuration = (startDate, endDate) => {
   const start = new Date(startDate);
@@ -44,7 +44,7 @@ exports.getTripById = async (req, res) => {
 
 // Create a new trip
 exports.createTrip = async (req, res) => {
-  const { title, location, startDate, endDate } = req.body;
+  const { title, days, startDate, endDate, expense } = req.body;
   const userId = req.user._id;
 
   try {
@@ -71,14 +71,15 @@ exports.createTrip = async (req, res) => {
     const newTrip = new Trip({
       userId,
       title,
-      location,
+      days,
       startDate,
       endDate,
       duration,
+      expense,
     });
 
     await newTrip.save();
-
+    await User.findByIdAndUpdate(userId, { $push: { trips: newTrip._id } });
     res.json({ message: "Trip created successfully", trip: newTrip });
   } catch (error) {
     console.error("Error creating trip:", error);
