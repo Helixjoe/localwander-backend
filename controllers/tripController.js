@@ -44,7 +44,7 @@ exports.getTripById = async (req, res) => {
 
 // Create a new trip
 exports.createTrip = async (req, res) => {
-  const { title, days, startDate, endDate, expense } = req.body;
+  const { title, days, startDate, endDate, expense, privateTrip } = req.body;
   const userId = req.user._id;
 
   try {
@@ -76,6 +76,7 @@ exports.createTrip = async (req, res) => {
       endDate,
       duration,
       expense,
+      privateTrip,
     });
 
     await newTrip.save();

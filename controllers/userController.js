@@ -16,10 +16,12 @@ exports.getTripsByUserId = async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const trips = await Trip.find({ userId });
-
-    if (!trips) {
-      return res.status(404).json({ error: "Trips not found for this user" });
+    const trips = await Trip.find({ userId, privateTrip: false });
+    console.log(trips);
+    if (!trips || trips.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No public trips found for this user" });
     }
 
     res.json(trips);

@@ -20,6 +20,7 @@ const tripSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   duration: Number,
   expense: Number,
+  privateTrip: Boolean,
 });
 
 module.exports = mongoose.model("Trip", tripSchema);
