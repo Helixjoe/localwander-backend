@@ -1,20 +1,23 @@
 const Trip = require("../models/Trip");
 
+// Helper function to calculate duration
+const calculateDuration = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const timeDiff = Math.abs(end - start);
+  const duration = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)); // Round up to ensure the whole duration is covered
+  return duration;
+};
+
 // Get all trips for the current authenticated user
 exports.getTripsByUser = async (req, res) => {
-  // Check if the user is authenticated
   if (!req.user) {
     return res.status(401).json({ error: "User not authenticated" });
   }
 
   try {
-    // Extract userId from the authenticated user object (assuming userId is stored as _id)
-    const userId = req.user._id; // Assuming userId is stored as _id
-
-    // Find all trips associated with the userId
+    const userId = req.user._id;
     const trips = await Trip.find({ userId });
-
-    // Respond with the found trips
     res.json(trips);
     console.log(trips);
   } catch (error) {
@@ -23,19 +26,15 @@ exports.getTripsByUser = async (req, res) => {
   }
 };
 
+// Get trip by ID
 exports.getTripById = async (req, res) => {
   const { tripid } = req.params;
 
   try {
-    // Find trip by ID
     const trip = await Trip.findById(tripid);
-
-    // If trip is not found, return 404 status code
     if (!trip) {
       return res.status(404).json({ error: "Trip not found" });
     }
-
-    // Respond with the found trip
     res.json(trip);
   } catch (error) {
     console.error("Error fetching trip:", error);
@@ -46,20 +45,18 @@ exports.getTripById = async (req, res) => {
 // Create a new trip
 exports.createTrip = async (req, res) => {
   const { title, location, startDate, endDate } = req.body;
-  const userId = req.user._id; // Adjust this based on your actual user schema
+  const userId = req.user._id;
 
   try {
-    // Check for overlapping trips
     const overlappingTrips = await Trip.find({
       userId,
       $or: [
-        { startDate: { $lte: endDate }, endDate: { $gte: startDate } }, // Trip starts before or ends after the new trip
-        { startDate: { $gte: startDate, $lte: endDate } }, // Trip starts during the new trip
-        { endDate: { $gte: startDate, $lte: endDate } }, // Trip ends during the new trip
+        { startDate: { $lte: endDate }, endDate: { $gte: startDate } },
+        { startDate: { $gte: startDate, $lte: endDate } },
+        { endDate: { $gte: startDate, $lte: endDate } },
       ],
     });
 
-    // If overlapping trips exist, respond with an error message and details of overlapping trips
     if (overlappingTrips.length > 0) {
       const overlappingTripDetails = overlappingTrips.map((trip) => ({
         title: trip.title,
@@ -70,13 +67,7 @@ exports.createTrip = async (req, res) => {
       });
     }
 
-    // Calculate the duration in milliseconds
-    const durationInMs = new Date(endDate) - new Date(startDate);
-
-    // Convert duration from milliseconds to days
-    const duration = durationInMs / (1000 * 60 * 60 * 24);
-
-    // Create a new trip with the extracted userId
+    const duration = calculateDuration(startDate, endDate);
     const newTrip = new Trip({
       userId,
       title,
@@ -86,10 +77,8 @@ exports.createTrip = async (req, res) => {
       duration,
     });
 
-    // Save the new trip to the database
     await newTrip.save();
 
-    // Respond with success message and created trip data
     res.json({ message: "Trip created successfully", trip: newTrip });
   } catch (error) {
     console.error("Error creating trip:", error);
@@ -101,35 +90,39 @@ exports.createTrip = async (req, res) => {
 exports.updateTrip = async (req, res) => {
   const { tripId } = req.params;
   const updateData = req.body;
-  try {
-    // Check for overlapping trips
-    const overlappingTrips = await Trip.find({
-      _id: { $ne: tripId }, // Exclude the current trip from overlapping check
-      userId: updateData.userId, // Assuming userId is included in updateData
-      $or: [
-        {
-          startDate: { $lte: updateData.endDate },
-          endDate: { $gte: updateData.startDate },
-        }, // Trip starts before or ends after the updated trip
-        { startDate: { $gte: updateData.startDate, $lte: updateData.endDate } }, // Trip starts during the updated trip
-        { endDate: { $gte: updateData.startDate, $lte: updateData.endDate } }, // Trip ends during the updated trip
-      ],
-    });
 
-    // If overlapping trips exist, respond with an error message and details of overlapping trips
-    if (overlappingTrips.length > 0) {
-      const overlappingTripDetails = overlappingTrips.map((trip) => ({
-        title: trip.title,
-      }));
-      return res.status(400).json({
-        error: "The updated trip overlaps with existing trips",
-        overlappingTrips: overlappingTripDetails,
+  try {
+    // Validate the input data
+    if (!updateData.title || !updateData.startDate || !updateData.endDate) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Calculate duration if dates are present
+    if (updateData.startDate && updateData.endDate) {
+      const startDate = new Date(updateData.startDate);
+      const endDate = new Date(updateData.endDate);
+      updateData.duration = (endDate - startDate) / (1000 * 60 * 60 * 24); // Convert milliseconds to days
+    }
+
+    // Ensure travel arrays exist
+    if (updateData.days) {
+      updateData.days.forEach((day) => {
+        if (!day.travel) {
+          day.travel = [];
+        }
       });
     }
 
+    // Find and update the trip
     const updatedTrip = await Trip.findByIdAndUpdate(tripId, updateData, {
       new: true,
     });
+
+    // If trip not found
+    if (!updatedTrip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
+
     res.json({ message: "Trip updated successfully", trip: updatedTrip });
   } catch (error) {
     console.error("Error updating trip:", error);
