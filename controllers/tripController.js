@@ -9,6 +9,18 @@ const calculateDuration = (startDate, endDate) => {
   return duration;
 };
 
+const calculateTotalExpense = (trip) => {
+  let totalExpense = 0;
+
+  // Iterate over each day
+  for (const day of trip.days) {
+    // Add the day's expense
+    totalExpense += Number(day.expense) || 0;
+  }
+
+  return totalExpense;
+};
+
 // Get all trips for the current authenticated user
 exports.getTripsByUser = async (req, res) => {
   if (!req.user) {
@@ -19,7 +31,6 @@ exports.getTripsByUser = async (req, res) => {
     const userId = req.user._id;
     const trips = await Trip.find({ userId });
     res.json(trips);
-    console.log(trips);
   } catch (error) {
     console.error("Error fetching trips:", error);
     res.status(500).json({ error: "Failed to fetch trips" });
@@ -44,8 +55,9 @@ exports.getTripById = async (req, res) => {
 
 // Create a new trip
 exports.createTrip = async (req, res) => {
-  const { title, days, startDate, endDate, expense, privateTrip } = req.body;
+  const { title, days, startDate, endDate, privateTrip } = req.body;
   const userId = req.user._id;
+  expense = 0;
 
   try {
     const overlappingTrips = await Trip.find({
@@ -105,6 +117,9 @@ exports.updateTrip = async (req, res) => {
       const endDate = new Date(updateData.endDate);
       updateData.duration = (endDate - startDate) / (1000 * 60 * 60 * 24); // Convert milliseconds to days
     }
+
+    const totalExpense = calculateTotalExpense(updateData);
+    updateData.expense = totalExpense;
 
     // Ensure travel arrays exist
     if (updateData.days) {
