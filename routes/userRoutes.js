@@ -1,5 +1,6 @@
 const express = require("express");
 const userController = require("../controllers/userController");
+const { getTripsByUserId } = require("../controllers/userController");
 const router = express.Router();
 const {
   ensureAuthenticated,
@@ -9,6 +10,7 @@ const User = require("../models/User");
 
 router.get("/all", ensureAuthenticated, userController.getAllUsers);
 
+router.get("/:userId", getTripsByUserId);
 // GET route to fetch user profile (requires authentication)
 router.get("/profile", ensureAuthenticated, attachUserData, (req, res) => {
   res.json({ user: req.user }); // Return authenticated user data
