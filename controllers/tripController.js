@@ -74,6 +74,25 @@ exports.createTrip = async (req, res) => {
   expense = 0;
 
   try {
+    const now = new Date();
+    if (new Date(startDate) < now && new Date(endDate) < now) {
+      return res
+        .status(400)
+        .json({ error: "Start date and end date must be in the future" });
+    } else if (new Date(startDate) < now) {
+      return res
+        .status(400)
+        .json({ error: "Start date must be in the future" });
+    } else if (new Date(endDate) < now) {
+      return res.status(400).json({ error: "End date must be in the future" });
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+      return res
+        .status(400)
+        .json({ error: "End date must be after start date" });
+    }
+
     const overlappingTrips = await Trip.find({
       userId,
       $or: [
@@ -123,6 +142,30 @@ exports.updateTrip = async (req, res) => {
     // Validate the input data
     if (!updateData.title || !updateData.startDate || !updateData.endDate) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Validate the dates
+    const now = new Date();
+    console.log(now);
+    if (
+      new Date(updateData.startDate) < now &&
+      new Date(updateData.endDate) < now
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Start date and end date must be in the future" });
+    } else if (new Date(updateData.startDate) < now) {
+      return res
+        .status(400)
+        .json({ error: "Start date must be in the future" });
+    } else if (new Date(updateData.endDate) < now) {
+      return res.status(400).json({ error: "End date must be in the future" });
+    }
+
+    if (new Date(updateData.endDate) < new Date(updateData.startDate)) {
+      return res
+        .status(400)
+        .json({ error: "End date must be after start date" });
     }
 
     // Calculate duration if dates are present
