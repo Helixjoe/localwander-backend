@@ -53,6 +53,20 @@ exports.getTripById = async (req, res) => {
   }
 };
 
+exports.getAllTrips = async (req, res) => {
+  try {
+    // Find all trips, excluding those marked as private
+    const trips = await Trip.find({ privateTrip: { $ne: true } }).populate(
+      "userId",
+      "email"
+    );
+    res.json(trips);
+  } catch (error) {
+    console.error("Error fetching all trips:", error);
+    res.status(500).json({ error: "Failed to fetch all trips" });
+  }
+};
+
 // Create a new trip
 exports.createTrip = async (req, res) => {
   const { title, days, startDate, endDate, privateTrip } = req.body;

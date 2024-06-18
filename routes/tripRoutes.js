@@ -19,4 +19,7 @@ router.delete(
 );
 
 router.get("/show/:tripid", ensureAuthenticated, tripController.getTripById);
+
+router.get("/all", ensureAuthenticated, tripController.getAllTrips);
+
 module.exports = router;
