@@ -31,12 +31,11 @@ This is the backend for the Travel App, built with Node.js and Express.js. The b
 3. Create a `.env` file in the root directory and add your MongoDB connection string and other environment variables:
     ```env
     MONGODB_URI=your_mongodb_connection_string
-    JWT_SECRET=your_jwt_secret
     ```
 
 4. Start the server:
     ```sh
-    npm start
+    node app.js
     ```
 
 ## Configuration
